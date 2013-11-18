@@ -121,7 +121,7 @@
      soap_service:@"urn:schemas-upnp-org:service:AVTransport:1"
      soap_action:@"AddURIToQueue"
      soap_arguments:[NSString stringWithFormat:@"<InstanceID>0</InstanceID><EnqueuedURI>%@</EnqueuedURI><EnqueuedURIMetaData></EnqueuedURIMetaData><DesiredFirstTrackNumberEnqueued>0</DesiredFirstTrackNumberEnqueued><EnqueueAsNext>1</EnqueueAsNext>", track]
-     completion:nil];
+     completion:block];
 }
 
 - (void)getVolume:(void (^)(NSInteger , NSError *))block {
@@ -148,6 +148,32 @@
      completion:block];
 }
 
+- (void)getMute:(void (^)(NSNumber *, NSError *))block {
+    [self
+     upnp:@"/MediaRenderer/RenderingControl/Control"
+     soap_service:@"urn:schemas-upnp-org:service:RenderingControl:1"
+     soap_action:@"GetMute"
+     soap_arguments:@"<InstanceID>0</InstanceID><Channel>Master</Channel>"
+     completion:^(NSDictionary *responseXML, NSError *error) {
+         if(block) {
+             if(error) block(nil, error);
+             
+             NSString *stateStr = responseXML[@"s:Envelope"][@"s:Body"][@"u:GetMuteResponse"][@"CurrentMute"][@"text"];
+             BOOL state = [stateStr isEqualToString:@"1"] ? TRUE : FALSE;
+             block([NSNumber numberWithBool:state], nil);
+        }
+     }];
+}
+
+- (void)setMute:(BOOL)mute completion:(void (^)(NSDictionary *, NSError *))block {
+    [self
+     upnp:@"/MediaRenderer/RenderingControl/Control"
+     soap_service:@"urn:schemas-upnp-org:service:RenderingControl:1"
+     soap_action:@"SetMute"
+     soap_arguments:[NSString stringWithFormat:@"<InstanceID>0</InstanceID><Channel>Master</Channel><DesiredMute>%d</DesiredMute>", mute]
+     completion:block];
+}
+
 - (void)trackInfo:(void (^)(NSDictionary *, NSError *))block {
     [self
      upnp:@"/MediaRenderer/AVTransport/Control"
@@ -155,6 +181,7 @@
      soap_action:@"GetPositionInfo"
      soap_arguments:@"<InstanceID>0</InstanceID>"
      completion:^(NSDictionary *responseXML, NSError *error) {
+         if(error) block(nil, error);
          
          // Create NSDictionary to return, clean up the data Sonos responds
          NSMutableDictionary *returnData = [NSMutableDictionary dictionaryWithObjectsAndKeys:
@@ -223,7 +250,13 @@
      soap_service:@"urn:schemas-upnp-org:service:AVTransport:1"
      soap_action:@"GetTransportInfo"
      soap_arguments:@"<InstanceID>0</InstanceID>"
-     completion:block];
+     completion:^(NSDictionary *responseXML, NSError *error) {
+         if(block) {
+             if(error) block(nil, error);
+             NSDictionary *returnData = @{@"CurrentTransportState" : responseXML[@"s:Envelope"][@"s:Body"][@"u:GetTransportInfoResponse"][@"CurrentTransportState"][@"text"]};
+             block(returnData, nil);
+         }
+     }];
 }
 
 - (void)browse:(void (^)(NSDictionary *, NSError *))block {
@@ -231,8 +264,47 @@
      upnp:@"/MediaServer/ContentDirectory/Control"
      soap_service:@"urn:schemas-upnp-org:service:ContentDirectory:1"
      soap_action:@"Browse"
-     soap_arguments:@"<ObjectID>A:ARTIST</ObjectID><BrowseFlag>BrowseDirectChildren</BrowseFlag><Filter>*</Filter><StartingIndex>0</StartingIndex><RequestedCount>5</RequestedCount><SortCriteria>*</SortCriteria>"
-     completion:block];
+     soap_arguments:@"<ObjectID>Q:0</ObjectID><BrowseFlag>BrowseDirectChildren</BrowseFlag><Filter>*</Filter><StartingIndex>0</StartingIndex><RequestedCount>0</RequestedCount><SortCriteria></SortCriteria>"
+     completion:^(NSDictionary *responseXML, NSError *error) {
+         if(block) {
+             if(error) block(nil, error);
+             NSMutableDictionary *returnData = [NSMutableDictionary dictionaryWithObjectsAndKeys:responseXML[@"s:Envelope"][@"s:Body"][@"u:BrowseResponse"][@"TotalMatches"][@"text"], @"TotalMatches", nil];
+             
+             NSDictionary *queue = [XMLReader dictionaryForXMLString:responseXML[@"s:Envelope"][@"s:Body"][@"u:BrowseResponse"][@"Result"][@"text"] error:nil];
+             
+             NSLog(@"Queue: %@", queue);
+             
+             NSMutableArray *queue_items = [NSMutableArray array];
+             
+             for(NSDictionary *queue_item in queue[@"DIDL-Lite"][@"item"]  ) {
+                 // Spotify
+                 if([queue_item[@"res"][@"protocolInfo"] isEqualToString:@"sonos.com-spotify:*:audio/x-spotify:*"]) {
+                     NSDictionary *item = @{
+                                            @"MetaDataCreator" : queue_item[@"dc:creator"][@"text"],
+                                            @"MetaDataTitle" : queue_item[@"dc:title"][@"text"],
+                                            @"MetaDataAlbum" : queue_item[@"upnp:album"][@"text"],
+                                            @"MetaDataAlbumArtURI": queue_item[@"upnp:albumArtURI"][@"text"],
+                                            @"MetaDataTrackURI": queue_item[@"res"][@"text"]};
+                     [queue_items addObject:item];
+                 }
+                 
+                 // HTTP Streaming (SoundCloud?)
+                 if([queue_item[@"res"][@"protocolInfo"] isEqualToString:@"sonos.com-http:*:audio/mpeg:*"]) {
+                     NSDictionary *item = @{
+                                            @"MetaDataCreator" : queue_item[@"dc:creator"][@"text"],
+                                            @"MetaDataTitle" : queue_item[@"dc:title"][@"text"],
+                                            @"MetaDataAlbum" : @"",
+                                            @"MetaDataAlbumArtURI" : queue_item[@"upnp:albumArtURI"][@"text"],
+                                            @"MetaDataTrackURI" : queue_item[@"res"][@"text"]};
+                     [queue_items addObject:item];
+                 }
+             }
+             
+             [returnData setObject:queue_items forKey:@"QueueItems"];
+             
+             block(returnData, nil);
+         }
+     }];
 }
 
 @end

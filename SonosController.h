@@ -43,6 +43,7 @@
 /**
  All SOAP methods returns asynchronus XML data from the Sonos Device in dictionary format for easy reading.
  Some methods returns slimmed down data, for easier management (Sonos returns a bunch of unneccesary data):
+ - getMute:
  - trackInfo:
  - mediaInfo:
  - status:
@@ -105,6 +106,21 @@
 - (void)setVolume:(int)volume completion:(void (^)(NSDictionary *, NSError *))block;
 
 /**
+ Get mute status
+ 
+ @param block Objective-C block to call on finish
+ */
+- (void)getMute:(void (^)(NSNumber *, NSError *))block;
+
+/**
+ Set or unset mute on device
+ 
+ @param mute Bool value
+ @param block Objective-C block to call on finish
+ */
+- (void)setMute:(BOOL)mute completion:(void (^)(NSDictionary *, NSError *))block;
+
+/**
  Get current track info. NSDictionary contains (if data available, otherwise empty value):
  - MetaDataAlbum - Album name
  - MetaDataAlbumArtURI - URI to Album art
@@ -119,6 +135,13 @@
  */
 - (void)trackInfo:(void (^)(NSDictionary *, NSError *))block;
 - (void)mediaInfo:(void (^)(NSDictionary *, NSError *))block;
+
+/**
+ Get status info (playback status). The only interesting data IMO is CurrentTransportState that tells if the playback is active. Thus returns:
+ - CurrentTransportState - {PLAYING|PAUSED_PLAYBACK|STOPPED}
+ 
+ @param block Objective-C block to call on finish
+ */
 - (void)status:(void (^)(NSDictionary *, NSError *))block;
 - (void)browse:(void (^)(NSDictionary *, NSError *))block;
 
