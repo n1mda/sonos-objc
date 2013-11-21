@@ -47,6 +47,7 @@
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] init];
     [request setURL:[NSURL URLWithString:[NSString stringWithFormat:@"http://%@:%d%@", self.ip, self.port, url]]];
     [request setHTTPMethod:@"POST"];
+    [request setTimeoutInterval:15.0];
     
     // Set headers
     [request addValue:@"text/xml" forHTTPHeaderField:@"Content-Type"];
