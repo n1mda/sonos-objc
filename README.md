@@ -10,6 +10,7 @@ The aim of this repository is to create a simple to use, yet useful API to contr
 ```objective-c
 @interface ViewController ()
 @property (nonatomic, strong) SonosDiscover *discovery;
+@property (nonatomic, strong) NSMutableArray *devices;
 @end
 
 @implementation ViewController
@@ -18,6 +19,7 @@ The aim of this repository is to create a simple to use, yet useful API to contr
 {
     [super viewDidLoad];
     
+    self.devices = [[NSMutableArray alloc] init];
     self.discovery = [[SonosDiscover alloc] initWithDelegate:self];
     [self.discovery discoverControllersForDuration:10];
 }
@@ -27,6 +29,14 @@ The aim of this repository is to create a simple to use, yet useful API to contr
     NSLog(@"Found Sonos Controller at %@:%d", host, port);
     SonosController *controller = [[SonosController alloc] initWithIP:host port:port];
     [devices addObject:controller];
+}
+
+- (void)discoveryDidFinish {
+    for(SonosController *device in self.devices) {
+        [device play:nil completion:^(NSDictionary *response, NSError *error) {
+		NSLog(@"Playing");
+	}];
+    }
 }
 ```
 To discover sonos devices on a network, use SonosDiscover
