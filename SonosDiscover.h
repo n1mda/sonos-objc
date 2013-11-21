@@ -33,6 +33,7 @@
 // Sonos Controller was found
 @protocol SonosDiscoverDelegate <NSObject>
 - (void)foundSonosControllerAtHost:(NSString *)host port:(int)port;
+- (void)discoveryDidFinish;
 @end
 
 @interface SonosDiscover : NSObject <GCDAsyncUdpSocketDelegate>

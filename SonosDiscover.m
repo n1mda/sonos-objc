@@ -56,6 +56,8 @@
 - (void)stopDiscovery {
     [self.udpSocket close];
     self.udpSocket = nil;
+    if([self.delegate respondsToSelector:@selector(discoveryDidFinish)])
+        [self.delegate discoveryDidFinish];
 }
 
 #pragma mark - GCDAsyncUdpSocketDelegate
