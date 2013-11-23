@@ -29,20 +29,8 @@
 #import <Foundation/Foundation.h>
 #import "GCDAsyncUdpSocket.h"
 
-// Conforming to this protocol allows a UI to be informed if a
-// Sonos Controller was found
-@protocol SonosDiscoverDelegate <NSObject>
-- (void)foundSonosControllerAtHost:(NSString *)host port:(int)port;
-- (void)discoveryDidFinish;
-@end
-
 @interface SonosDiscover : NSObject <GCDAsyncUdpSocketDelegate>
 
-@property (nonatomic, weak) id<SonosDiscoverDelegate> delegate;
-
-- (id)initWithDelegate:(id<SonosDiscoverDelegate>)delegate;
-
-- (void)discoverControllersForDuration:(int)seconds;
-- (void)stopDiscovery;
++ (void)discoverControllers:(void (^)(NSArray *, NSError *))completion;
 
 @end
