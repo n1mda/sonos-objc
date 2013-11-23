@@ -8,9 +8,11 @@ The aim of this repository is to create a simple to use, yet useful API to contr
 # Usage
 
 ```objective-c
+#import "SonosDiscover.h"
+#import "SonosController.h"
+
 @interface ViewController ()
-@property (nonatomic, strong) SonosDiscover *discovery;
-@property (nonatomic, strong) NSMutableArray *devices;
+@property (nonatomic, strong) NSMutableArray *sonosDevices;
 @end
 
 @implementation ViewController
@@ -20,27 +22,14 @@ The aim of this repository is to create a simple to use, yet useful API to contr
     [super viewDidLoad];
     
     self.devices = [[NSMutableArray alloc] init];
-    self.discovery = [[SonosDiscover alloc] initWithDelegate:self];
-    [self.discovery discoverControllersForDuration:10];
-}
-
-#pragma mark - SonosDiscoverDelegate methods
-- (void)foundSonosControllerAtHost:(NSString *)host port:(int)port {
-    NSLog(@"Found Sonos Controller at %@:%d", host, port);
-    SonosController *controller = [[SonosController alloc] initWithIP:host port:port];
-    [devices addObject:controller];
-}
-
-- (void)discoveryDidFinish {
-    for(SonosController *device in self.devices) {
-        [device play:nil completion:^(NSDictionary *response, NSError *error) {
-		NSLog(@"Playing");
-	}];
-    }
+    [SonosDiscover discoverControllers:^(NSArray *devices, NSError *error){
+	NSLog(@"Devices: %@", devices);
+        for (NSDictionary *device in devices) {
+            SonosController *controller = [[SonosController alloc] initWithIP:device[@"ip"] port:[device[@"port"] intValue]];
+            [self.sonosDevices addObject:controller];
+        }
+    }];
 }
 ```
-To discover sonos devices on a network, use SonosDiscover
-
-Note that if you're using ARC, you need to propertize SonosDiscover with strong, otherwise it will release itself before GCDAsyncUDPSocket has had time to respond with devices
 
 See SonosController.h for usage on how to control devices
