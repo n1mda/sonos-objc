@@ -12,7 +12,7 @@ CocoaPods is a dependency manager for Objective-C, which automates and simplifie
 **Podfile**
 
 ```rb
-pod "sonos-objc", "~> 0.1.0"
+pod "sonos-objc", "~> 0.1.1"
 ```
 
 # Usage
