@@ -1,9 +1,9 @@
 sonos-objc
 ==========
 
-A simple Objective-C API for controlling Sonos Devices
+An Objective-C API for controlling Sonos Devices
 
-The aim of this library is to create a simple to use, yet useful API to control Sonos Devices via SOAP. It depends on AFNetworking (iOS and OS X) and XMLReader.h/m (iOS and OS X)
+The aim of this library is to create a simple to use, yet useful API to control Sonos Devices via SOAP. It depends on AFNetworking (iOS and OS X), CocoaAsyncSocket (iOS and OS X) and XMLReader.h/m (iOS and OS X)
 
 # Installation with CocoaPods
 
@@ -12,32 +12,38 @@ CocoaPods is a dependency manager for Objective-C, which automates and simplifie
 **Podfile**
 
 ```rb
-pod "sonos-objc", "~> 0.1.1"
+pod "sonos-objc", "~> 0.1.2"
 ```
 
 # Usage
 
 ```objective-c
-#import "SonosDiscover.h"
+#import "SonosManager.h"
 #import "SonosController.h"
-
-@interface ViewController ()
-@property (nonatomic, strong) NSMutableArray *sonosDevices;
-@end
 
 @implementation ViewController
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
-    self.devices = [[NSMutableArray alloc] init];
-    [SonosDiscover discoverControllers:^(NSArray *devices, NSError *error){
-	NSLog(@"Devices: %@", devices);
-        for (NSDictionary *device in devices) {
-            SonosController *controller = [[SonosController alloc] initWithIP:device[@"ip"] port:[device[@"port"] intValue]];
-            [self.sonosDevices addObject:controller];
-        }
+
+    [[SonosManager sharedInstance] addObserver:self forKeyPath:@"allDevices" options:NSKeyValueObservingOptionNew context:NULL];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+	SonosController *controller = [[SonosManager sharedInstance] currentDevice];
+    [controller trackInfo:^(NSString *artist, NSString *title, NSString *album, NSURL *albumArt, NSInteger time, NSInteger duration, NSInteger queueIndex, NSString *trackURI, NSString *protocol, NSError *error){
+        
+        NSLog(@"Artist: %@", artist);
+        NSLog(@"Title: %@", title);
+        NSLog(@"Album: %@", album);
+        NSLog(@"Album Art: %@", albumArt);
+        NSLog(@"Time: %d", time);
+        NSLog(@"Duration: %d", duration);
+        NSLog(@"Place in queue: %d", queueIndex);
+        NSLog(@"Track URI: %@", trackURI);
+        NSLog(@"Protocol: %@", protocol);
+        
     }];
 }
 ```
