@@ -1,10 +1,10 @@
 Pod::Spec.new do |s|
   s.name         = "sonos-objc"
-  s.version      = "0.1.1"
+  s.version      = "0.1.2"
   s.description      = <<-EOL
-    The aim of this library is to create a simple to use, yet useful API to control Sonos Devices via SOAP. It depends on AFNetworking (iOS and OS X) and XMLReader.h/m (iOS and OS X)
+    The aim of this library is to create a simple to use, yet useful API to control Sonos Devices via SOAP. It depends on AFNetworking (iOS and OS X), CocoaAsyncSocket (iOS and OS X) and XMLReader.h/m (iOS and OS X)
   EOL
-  s.summary  = "A simple Objective-C API for controlling Sonos Devices."
+  s.summary  = "An Objective-C API for controlling Sonos Devices."
   s.homepage     = "https://github.com/n1mda/sonos-objc"
   s.license      = 'MIT'
   s.author       = { "n1mda" => "axel@appreviation.se" }

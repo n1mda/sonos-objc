@@ -8,6 +8,7 @@
 
 #import "SonosDiscover.h"
 #import "XMLReader.h"
+#import "SonosController.h"
 
 typedef void (^findDevicesBlock)(NSArray *ipAddresses);
 
@@ -38,15 +39,18 @@ typedef void (^findDevicesBlock)(NSArray *ipAddresses);
                         
                         for (NSDictionary *dictionary in inputDictionaryArray){
                             NSString *name = dictionary[@"text"];
+                            NSString *coordinator = dictionary[@"coordinator"];
                             NSString *uuid = dictionary[@"uuid"];
                             NSString *group = dictionary[@"group"];
                             NSString *ip = [[dictionary[@"location"] stringByReplacingOccurrencesOfString:@"http://" withString:@""] stringByReplacingOccurrencesOfString:@"/xml/device_description.xml" withString:@""];
                             NSArray *location = [ip componentsSeparatedByString:@":"];
+                            SonosController *controllerObject = [[SonosController alloc] initWithIP:[location objectAtIndex:0] port:[[location objectAtIndex:1] intValue]];
                             
-                            
-                            [devices addObject:@{@"ip": [location objectAtIndex:0], @"port" : [location objectAtIndex:1], @"name": name, @"uuid": uuid, @"group": group}];
+                            [devices addObject:@{@"ip": [location objectAtIndex:0], @"port" : [location objectAtIndex:1], @"name": name, @"coordinator": [NSNumber numberWithBool:[coordinator isEqualToString:@"true"] ? YES : NO], @"uuid": uuid, @"group": group, @"controller": controllerObject}];
                             
                         }
+                        NSSortDescriptor *sort = [NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES];
+                        [devices sortUsingDescriptors:[NSArray arrayWithObjects:sort, nil]];
                         completion(devices, error);
                     }
                 }];
@@ -81,7 +85,7 @@ typedef void (^findDevicesBlock)(NSArray *ipAddresses);
     [self.udpSocket sendData:[str dataUsingEncoding:NSUTF8StringEncoding] toHost:@"239.255.255.250" port:1900 withTimeout:-1 tag:0];
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-            [self stopDiscovery];
+        [self stopDiscovery];
     });
 }
 

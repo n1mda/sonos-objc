@@ -7,16 +7,20 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "SonosController.h"
-#import "SonosDiscover.h"
 
+@class SonosController;
 @interface SonosManager : NSObject
 
-// Array containing all Sonos Devices on network
-@property (strong, nonatomic) NSArray *allDevices;
+// Arrays containing all Sonos Devices on network
+@property (strong, nonatomic) NSMutableArray *coordinators;
+@property (strong, nonatomic) NSMutableArray *slaves;
+
 // The "current" device, ie. the device that acts if we select "play" now
 @property (strong, readwrite, nonatomic) SonosController *currentDevice;
 
 + (id)sharedInstance;
+
+// Returns a copy of all devices, coordinators + slaves
+- (NSArray *)allDevices;
 
 @end
